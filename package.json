@@ -11,9 +11,16 @@
     "pages:dev": "npx wrangler pages dev .vercel/output/static --compatibility-date=2024-07-01 --compatibility-flag=nodejs_compat"
   },
   "dependencies": {
+    "@hookform/resolvers": "^3.3.4",
+    "clsx": "^2.1.0",
+    "lucide-react": "^0.344.0",
     "next": "15.1.0",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "react-hook-form": "^7.50.0",
+    "sonner": "^1.4.0",
+    "tailwind-merge": "^2.2.0",
+    "zod": "^3.22.0"
   },
   "devDependencies": {
     "@cloudflare/next-on-pages": "^1.13.0",

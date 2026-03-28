@@ -5,6 +5,8 @@ import { ArrowLeft } from 'lucide-react'
 import { formatCurrency, formatDate, ORDER_STATUS_COLORS, ORDER_STATUS_LABELS } from '@/lib/utils'
 import OrderStatusUpdater from './OrderStatusUpdater'
 
+export const runtime = 'edge'
+
 const PAYLOAD_URL = process.env.NEXT_PUBLIC_PAYLOAD_URL || ''
 
 async function getOrder(id: string, token: string) {
@@ -76,7 +78,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
               <div key={i} className="flex items-center justify-between text-sm">
                 <div>
                   <p className="font-medium text-gray-900">{item.product?.name ?? 'Product'}</p>
-                  <p className="text-gray-500">Qty: {item.quantity} x {formatCurrency(item.unitPrice)}</p>
+                  <p className="text-gray-500">Qty: {item.quantity} × {formatCurrency(item.unitPrice)}</p>
                 </div>
                 <p className="font-semibold text-gray-900">{formatCurrency(item.subtotal)}</p>
               </div>

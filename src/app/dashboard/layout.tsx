@@ -2,6 +2,8 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Sidebar from '@/components/layout/Sidebar'
 
+export const runtime = 'edge'
+
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies()
   const token = cookieStore.get('payload-token')?.value

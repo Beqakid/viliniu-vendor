@@ -4,6 +4,8 @@ import { formatCurrency, formatDate, ORDER_STATUS_COLORS, ORDER_STATUS_LABELS } 
 import Link from 'next/link'
 import { ShoppingBag } from 'lucide-react'
 
+export const runtime = 'edge'
+
 export default async function OrdersPage() {
   const cookieStore = await cookies()
   const token = cookieStore.get('payload-token')?.value!

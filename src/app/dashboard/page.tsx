@@ -3,6 +3,8 @@ import { getMe, getMyVendorProfile, getVendorOrders, getVendorProducts } from '@
 import { formatCurrency, ORDER_STATUS_COLORS, ORDER_STATUS_LABELS, formatDate } from '@/lib/utils'
 import { Package, ShoppingBag, DollarSign, Clock } from 'lucide-react'
 
+export const runtime = 'edge'
+
 export default async function DashboardPage() {
   const cookieStore = await cookies()
   const token = cookieStore.get('payload-token')?.value!

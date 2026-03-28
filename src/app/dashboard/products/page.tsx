@@ -4,6 +4,8 @@ import { formatCurrency } from '@/lib/utils'
 import { Plus, Pencil, Package } from 'lucide-react'
 import Link from 'next/link'
 
+export const runtime = 'edge'
+
 export default async function ProductsPage() {
   const cookieStore = await cookies()
   const token = cookieStore.get('payload-token')?.value!

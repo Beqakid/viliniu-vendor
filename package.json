@@ -8,32 +8,22 @@
     "start": "next start",
     "lint": "next lint",
     "pages:build": "npx @cloudflare/next-on-pages",
-    "pages:dev": "npx wrangler pages dev .vercel/output/static --compatibility-date=2024-07-01 --compatibility-flag=nodejs_compat",
-    "deploy": "npm run pages:build && npx wrangler pages deploy .vercel/output/static"
+    "pages:dev": "npx wrangler pages dev .vercel/output/static --compatibility-date=2024-07-01 --compatibility-flag=nodejs_compat"
   },
   "dependencies": {
-    "next": "14.2.5",
+    "next": "14.3.0",
     "react": "^18",
-    "react-dom": "^18",
-    "react-hook-form": "^7.52.0",
-    "zod": "^3.23.8",
-    "@hookform/resolvers": "^3.7.0",
-    "lucide-react": "^0.400.0",
-    "clsx": "^2.1.1",
-    "tailwind-merge": "^2.4.0",
-    "sonner": "^1.5.0"
+    "react-dom": "^18"
   },
   "devDependencies": {
     "@cloudflare/next-on-pages": "^1.13.0",
-    "wrangler": "^3.60.0",
     "typescript": "^5",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "autoprefixer": "^10.0.1",
-    "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "eslint": "^8",
-    "eslint-config-next": "14.2.5"
+    "postcss": "^8",
+    "autoprefixer": "^10.0.1",
+    "wrangler": "^3.57.0"
   }
 }

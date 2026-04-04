@@ -2,10 +2,10 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { updateOrderStatus } from '@/lib/api'
 import { useRouter } from 'next/navigation'
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/utils'
-import { CheckCircle, Package, Truck, ArrowRight, XCircle } from 'lucide-react'
+import { ArrowRight, XCircle } from 'lucide-react'
+import { updateOrderStatusAction } from './actions'
 
 // Vendor can progress through these statuses
 const VENDOR_STATUS_FLOW = [
@@ -39,10 +39,11 @@ export default function OrderStatusUpdater({ orderId, currentStatus }: Props) {
   const handleUpdate = async (status: string) => {
     setLoading(true)
     try {
-      const token = document.cookie.split('; ').find(r => r.startsWith('payload-token='))?.split('=')[1]
-      if (!token) throw new Error('Not authenticated')
-      await updateOrderStatus(orderId, status, token)
-      toast.success(`Order status updated to ${ORDER_STATUS_LABELS[status]}`)
+      const result = await updateOrderStatusAction(String(orderId), status)
+      if (!result.success) {
+        throw new Error(result.error)
+      }
+      toast.success(`Order status updated to ${ORDER_STATUS_LABELS[status] || status}`)
       router.refresh()
     } catch (err: any) {
       toast.error(err.message || 'Failed to update status')
@@ -71,7 +72,6 @@ export default function OrderStatusUpdater({ orderId, currentStatus }: Props) {
         {ALL_STATUSES.map((status, i) => {
           const isCompleted = i < currentIndex
           const isCurrent = i === currentIndex
-          const isFuture = i > currentIndex
 
           return (
             <div key={status.key} className="flex items-center">
@@ -101,7 +101,7 @@ export default function OrderStatusUpdater({ orderId, currentStatus }: Props) {
             disabled={loading}
             className="flex items-center gap-2 px-5 py-2.5 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors disabled:opacity-50"
           >
-            {nextStatus.icon} Move to {nextStatus.label}
+            {loading ? 'Updating...' : `${nextStatus.icon} Move to ${nextStatus.label}`}
           </button>
         )}
         <button

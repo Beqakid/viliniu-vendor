@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingBag, Store, LogOut } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingBag, Store, Users, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { logoutAction } from '@/lib/auth-actions'
 import { useRouter } from 'next/navigation'
@@ -11,6 +11,7 @@ const nav = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/products', label: 'Products', icon: Package },
   { href: '/dashboard/orders', label: 'Orders', icon: ShoppingBag },
+  { href: '/dashboard/team', label: 'Team', icon: Users },
   { href: '/dashboard/store', label: 'Store Settings', icon: Store },
 ]
 

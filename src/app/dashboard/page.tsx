@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers'
-import { getMe, getMyVendorProfile, getVendorOrders, getVendorProducts } from '@/lib/api'
+import { getMe, getMyVendorProfile, getMyStaffRole, getVendorOrders, getVendorProducts } from '@/lib/api'
 import { formatCurrency, ORDER_STATUS_COLORS, ORDER_STATUS_LABELS, formatDate } from '@/lib/utils'
 import { Package, ShoppingBag, DollarSign, Clock } from 'lucide-react'
 
@@ -10,16 +10,42 @@ export default async function DashboardPage() {
   const token = cookieStore.get('payload-token')?.value!
 
   const meData = await getMe(token).catch(() => null)
+
+  // Determine vendor context — owner or staff member
+  let vendorId: string | null = null
+  let myRole = 'store_owner'
+  let storeName = ''
+  let isStaffMember = false
+  let vendorApproved = true
+
+  // First try: direct vendor profile (store owner)
   const vendorData = await getMyVendorProfile(token).catch(() => null)
   const vendor = vendorData?.docs?.[0]
+  if (vendor) {
+    vendorId = vendor.id
+    storeName = vendor.storeName || ''
+    vendorApproved = vendor.approved !== false
+  }
+
+  // Second try: staff role lookup
+  if (!vendorId) {
+    const roleData = await getMyStaffRole(token).catch(() => null)
+    if (roleData) {
+      vendorId = String(roleData.vendorId)
+      myRole = roleData.role
+      storeName = roleData.storeName || ''
+      isStaffMember = true
+    }
+  }
 
   let stats = { products: 0, orders: 0, revenue: 0, pending: 0 }
   let recentOrders: any[] = []
+  const isDriver = myRole === 'delivery_driver'
 
-  if (vendor) {
+  if (vendorId) {
     const [products, orders] = await Promise.all([
-      getVendorProducts(vendor.id, token).catch(() => ({ docs: [], totalDocs: 0 })),
-      getVendorOrders(vendor.id, token).catch(() => ({ docs: [], totalDocs: 0 })),
+      isDriver ? Promise.resolve({ docs: [], totalDocs: 0 }) : getVendorProducts(vendorId, token).catch(() => ({ docs: [], totalDocs: 0 })),
+      getVendorOrders(vendorId, token).catch(() => ({ docs: [], totalDocs: 0 })),
     ])
     stats.products = products.totalDocs
     stats.orders = orders.totalDocs
@@ -32,14 +58,38 @@ export default async function DashboardPage() {
     <div className="p-8">
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900">
-          Welcome back, {meData?.user?.name?.split(' ')[0] ?? 'Vendor'} 👋
+          Welcome back, {meData?.user?.name?.split(' ')[0] ?? 'there'} 👋
         </h2>
-        {vendor && !vendor.approved && (
+
+        {/* Staff role banner */}
+        {isStaffMember && (
+          <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800">
+              You&apos;re logged in as{' '}
+              <span className="font-semibold">
+                {myRole === 'store_manager'
+                  ? 'Store Manager'
+                  : myRole === 'store_staff'
+                    ? 'Store Staff'
+                    : myRole === 'delivery_driver'
+                      ? 'Delivery Driver'
+                      : myRole.replace(/_/g, ' ')}
+              </span>
+              {storeName ? (
+                <>
+                  {' '}at <span className="font-semibold">{storeName}</span>
+                </>
+              ) : null}
+            </p>
+          </div>
+        )}
+
+        {vendor && !vendorApproved && (
           <div className="mt-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <p className="text-sm text-yellow-800">⏳ Your store is pending admin approval. You can still add products in the meantime.</p>
           </div>
         )}
-        {!vendor && (
+        {!vendorId && (
           <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm text-blue-800">
               👋 Welcome! <a href="/dashboard/store" className="font-semibold underline">Set up your store</a> to get started.
@@ -48,23 +98,47 @@ export default async function DashboardPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {[
-          { label: 'Total Products', value: stats.products, icon: Package, color: 'text-blue-600 bg-blue-50' },
-          { label: 'Total Orders', value: stats.orders, icon: ShoppingBag, color: 'text-purple-600 bg-purple-50' },
-          { label: 'Revenue', value: formatCurrency(stats.revenue), icon: DollarSign, color: 'text-green-600 bg-green-50' },
-          { label: 'Pending Orders', value: stats.pending, icon: Clock, color: 'text-orange-600 bg-orange-50' },
-        ].map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${isDriver ? 'lg:grid-cols-2' : 'lg:grid-cols-4'} gap-6 mb-8`}>
+        {!isDriver && (
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium text-gray-500">{label}</span>
-              <div className={`p-2 rounded-lg ${color}`}>
-                <Icon className="w-5 h-5" />
+              <span className="text-sm font-medium text-gray-500">Total Products</span>
+              <div className="p-2 rounded-lg text-blue-600 bg-blue-50">
+                <Package className="w-5 h-5" />
               </div>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{value}</p>
+            <p className="text-2xl font-bold text-gray-900">{stats.products}</p>
           </div>
-        ))}
+        )}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-sm font-medium text-gray-500">Total Orders</span>
+            <div className="p-2 rounded-lg text-purple-600 bg-purple-50">
+              <ShoppingBag className="w-5 h-5" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-gray-900">{stats.orders}</p>
+        </div>
+        {!isDriver && (
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-sm font-medium text-gray-500">Revenue</span>
+              <div className="p-2 rounded-lg text-green-600 bg-green-50">
+                <DollarSign className="w-5 h-5" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.revenue)}</p>
+          </div>
+        )}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-sm font-medium text-gray-500">Pending Orders</span>
+            <div className="p-2 rounded-lg text-orange-600 bg-orange-50">
+              <Clock className="w-5 h-5" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-gray-900">{stats.pending}</p>
+        </div>
       </div>
 
       {recentOrders.length > 0 && (

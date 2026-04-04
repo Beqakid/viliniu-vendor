@@ -51,7 +51,6 @@ export async function getMe(token: string) {
 }
 
 export async function getMyVendorProfile(token: string) {
-  // First get the current user ID, then query vendors by that ID
   const me = await getMe(token)
   if (!me?.user?.id) {
     return { docs: [], totalDocs: 0 }
@@ -118,4 +117,46 @@ export async function updateOrderStatus(id: string, status: string, token: strin
     method: 'PATCH',
     body: JSON.stringify({ status }),
   }, token)
+}
+
+// ===== Staff Management =====
+
+export async function getMyStaffRole(token: string) {
+  return fetchAPI<{ vendorId: number; role: string; storeName: string; vendor: any }>(
+    '/vendor-staff/my-role',
+    {},
+    token
+  )
+}
+
+export async function getStoreStaff(vendorId: number, token: string) {
+  return fetchAPI<{ vendorId: number; storeName: string; staff: any[] }>(
+    `/vendor-staff/list/${vendorId}`,
+    {},
+    token
+  )
+}
+
+export async function inviteStaff(
+  data: { email: string; name: string; role: string; vendorId: number },
+  token: string
+) {
+  return fetchAPI<{ success: boolean; message: string; userId: number }>(
+    '/vendor-staff/invite',
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    },
+    token
+  )
+}
+
+export async function removeStaff(staffId: number, token: string) {
+  return fetchAPI<{ success: boolean; message: string }>(
+    `/vendor-staff/remove/${staffId}`,
+    {
+      method: 'POST',
+    },
+    token
+  )
 }

@@ -160,3 +160,17 @@ export async function removeStaff(staffId: number, token: string) {
     token
   )
 }
+
+export async function updateStaffMember(
+  data: { staffId: number | string; vendorId: number; name?: string; phone?: string; role?: string; password?: string },
+  token: string
+) {
+  return fetchAPI<{ success: boolean; message: string }>(
+    '/team/update-member',
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    },
+    token
+  )
+}

@@ -1,9 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Users, UserPlus, Shield, Truck, X } from 'lucide-react'
+import { Users, UserPlus, Shield, Truck, X, Pencil, Key } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { getStoreStaff, inviteStaff, removeStaff } from '@/lib/api'
+import { getStoreStaff, inviteStaff, removeStaff, updateStaffMember } from '@/lib/api'
 import { toast } from 'sonner'
 
 interface StaffMember {
@@ -70,6 +70,12 @@ export default function TeamClient({ token, vendorId, myRole, storeName, initial
   const [addRole, setAddRole] = useState('store_staff')
   const [adding, setAdding] = useState(false)
   const [removingId, setRemovingId] = useState<number | string | null>(null)
+  const [editMember, setEditMember] = useState<StaffMember | null>(null)
+  const [editName, setEditName] = useState('')
+  const [editPhone, setEditPhone] = useState('')
+  const [editRole, setEditRole] = useState('')
+  const [editPassword, setEditPassword] = useState('')
+  const [saving, setSaving] = useState(false)
 
   const canManageTeam = myRole === 'store_owner' || myRole === 'store_manager'
 
@@ -202,6 +208,51 @@ export default function TeamClient({ token, vendorId, myRole, storeName, initial
   function openAddForm() {
     setShowInviteForm(false)
     setShowAddForm(true)
+  }
+
+  function openEditModal(member: StaffMember) {
+    setEditMember(member)
+    setEditName(member.user?.name || '')
+    setEditPhone((member.user as any)?.phone || '')
+    setEditRole(member.role)
+    setEditPassword('')
+  }
+
+  async function handleUpdateMember(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editMember) return
+
+    const updates: any = { staffId: editMember.id, vendorId }
+
+    // Only send changed fields
+    if (editName !== (editMember.user?.name || '')) updates.name = editName
+    if (editPhone !== ((editMember.user as any)?.phone || '')) updates.phone = editPhone
+    if (editRole !== editMember.role) updates.role = editRole
+    if (editPassword.trim()) {
+      if (editPassword.length < 6) {
+        toast.error('Password must be at least 6 characters')
+        return
+      }
+      updates.password = editPassword
+    }
+
+    // Check if there are actual changes
+    if (Object.keys(updates).length <= 2) { // only staffId and vendorId
+      toast.info('No changes to save')
+      return
+    }
+
+    try {
+      setSaving(true)
+      const result = await updateStaffMember(updates, token)
+      toast.success(result.message || 'Member updated successfully')
+      setEditMember(null)
+      await refreshStaff()
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update member')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -452,14 +503,23 @@ export default function TeamClient({ token, vendorId, myRole, storeName, initial
                     {canManageTeam && !member.isOwner && member.role !== 'store_owner' && (
                       <>
                         {!(myRole === 'store_manager' && member.role === 'store_manager') && (
-                          <button
-                            onClick={() => handleRemove(member)}
-                            disabled={removingId === member.id}
-                            className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
-                            title="Remove member"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
+                          <>
+                            <button
+                              onClick={() => openEditModal(member)}
+                              className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-500"
+                              title="Edit member"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleRemove(member)}
+                              disabled={removingId === member.id}
+                              className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+                              title="Remove member"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </>
                         )}
                       </>
                     )}
@@ -470,6 +530,90 @@ export default function TeamClient({ token, vendorId, myRole, storeName, initial
           </div>
         )}
       </div>
+
+      {/* Edit Member Modal */}
+      {editMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setEditMember(null)}>
+          <div className="mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">Edit Team Member</h3>
+              <button onClick={() => setEditMember(null)} className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateMember} className="space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Name</label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Phone</label>
+                <input
+                  type="tel"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  placeholder="+679..."
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
+                />
+              </div>
+
+              {myRole === 'store_owner' && editMember.role !== 'store_owner' && (
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Role</label>
+                  <select
+                    value={editRole}
+                    onChange={(e) => setEditRole(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
+                  >
+                    {availableRoles.map((r) => (
+                      <option key={r.value} value={r.value}>{r.label}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="border-t border-gray-200 pt-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Key className="h-4 w-4 text-gray-400" />
+                  <label className="text-sm font-medium text-gray-700">Reset Password</label>
+                </div>
+                <input
+                  type="password"
+                  value={editPassword}
+                  onChange={(e) => setEditPassword(e.target.value)}
+                  placeholder="Leave blank to keep current password"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
+                />
+                <p className="mt-1 text-xs text-gray-500">Min 6 characters. Share the new password with the team member.</p>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700 disabled:opacity-50"
+                >
+                  {saving ? 'Saving\u2026' : 'Save Changes'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditMember(null)}
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

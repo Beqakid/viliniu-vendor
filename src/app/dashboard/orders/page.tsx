@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers'
 import { getMyVendorProfile, getVendorOrders } from '@/lib/api'
-import { formatCurrency, formatDate, ORDER_STATUS_COLORS, ORDER_STATUS_LABELS } from '@/lib/utils'
+import { formatCurrency, formatDate, ORDER_STATUS_COLORS, ORDER_STATUS_LABELS, CITY_LABELS } from '@/lib/utils'
 import Link from 'next/link'
 import { ShoppingBag } from 'lucide-react'
 
@@ -32,44 +32,52 @@ export default async function OrdersPage() {
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">Order</th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">Customer</th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">Date</th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">Total</th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">Status</th>
-                <th className="px-6 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {orders.docs.map((order: any) => (
-                <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <p className="font-medium text-gray-900 text-sm">{order.orderNumber}</p>
-                    <p className="text-xs text-gray-500">{order.items?.length ?? 0} items</p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-sm text-gray-900">{order.customer?.name ?? 'Customer'}</p>
-                    <p className="text-xs text-gray-500">{order.deliveryCity}</p>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{formatDate(order.createdAt)}</td>
-                  <td className="px-6 py-4 text-sm font-semibold text-gray-900">{formatCurrency(order.totalAmount)}</td>
-                  <td className="px-6 py-4">
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${ORDER_STATUS_COLORS[order.status]}`}>
-                      {ORDER_STATUS_LABELS[order.status]}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <Link href={`/dashboard/orders/${order.id}`} className="text-xs text-brand-600 hover:text-brand-700 font-medium">
-                      View →
-                    </Link>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">Order</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">Customer</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">Date</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">Total</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">Payment</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">Status</th>
+                  <th className="px-6 py-3"></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {orders.docs.map((order: any) => (
+                  <tr key={order.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <p className="font-medium text-gray-900 text-sm">{order.orderNumber}</p>
+                      <p className="text-xs text-gray-500">{order.items?.length ?? 0} items</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-gray-900">{order.customer?.name ?? 'Customer'}</p>
+                      <p className="text-xs text-gray-500">{CITY_LABELS[order.deliveryAddress?.city] || order.deliveryAddress?.city || '—'}</p>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{formatDate(order.createdAt)}</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">{formatCurrency(order.totalAmount)}</td>
+                    <td className="px-6 py-4">
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${order.paymentStatus === 'paid' ? 'bg-green-100 text-green-800' : order.paymentStatus === 'unpaid' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
+                        {order.paymentStatus === 'paid' ? 'Paid' : order.paymentStatus === 'unpaid' ? 'Unpaid' : order.paymentStatus}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${ORDER_STATUS_COLORS[order.status] || 'bg-gray-100 text-gray-800'}`}>
+                        {ORDER_STATUS_LABELS[order.status] || order.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <Link href={`/dashboard/orders/${order.id}`} className="text-xs text-brand-600 hover:text-brand-700 font-medium">
+                        View →
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

@@ -1,7 +1,7 @@
 export type Role = 'customer' | 'vendor' | 'admin'
 export type DeliveryType = 'own_delivery' | 'platform_delivery'
-export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'out_for_delivery' | 'delivered' | 'cancelled'
-export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded'
+export type OrderStatus = 'pending' | 'confirmed' | 'packed' | 'ready_for_delivery' | 'out_for_delivery' | 'delivered' | 'cancelled'
+export type PaymentStatus = 'unpaid' | 'paid' | 'failed' | 'refunded'
 
 export interface User {
   id: string
@@ -39,8 +39,17 @@ export interface Product {
   active: boolean
 }
 
+export interface DeliveryAddress {
+  recipientName?: string
+  phone?: string
+  street?: string
+  city?: string
+  notes?: string
+}
+
 export interface OrderItem {
   product: string | Product
+  productName?: string
   quantity: number
   unitPrice: number
   subtotal: number
@@ -53,15 +62,17 @@ export interface Order {
   vendor: string | Vendor
   items: OrderItem[]
   subtotal: number
-  commissionAmount: number
+  commissionAmount?: number
   deliveryFee: number
   totalAmount: number
-  deliveryAddress: string
-  deliveryCity: string
-  deliveryNotes?: string
+  deliveryAddress: DeliveryAddress
   status: OrderStatus
   paymentStatus: PaymentStatus
-  stripePaymentIntentId?: string
+  paymentMethod?: string
+  stripeSessionId?: string
+  paymentIntentId?: string
+  customerNote?: string
+  vendorNote?: string
   createdAt: string
   updatedAt: string
 }

@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { useRouter } from 'next/navigation'
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/utils'
 import { ArrowRight, XCircle } from 'lucide-react'
 
@@ -31,14 +30,14 @@ interface Props {
   token: string
 }
 
-export default function OrderStatusUpdater({ orderId, currentStatus, token }: Props) {
-  const router = useRouter()
+export default function OrderStatusUpdater({ orderId, currentStatus: initialStatus, token }: Props) {
+  const [status, setStatus] = useState(initialStatus)
   const [loading, setLoading] = useState(false)
 
-  const currentIndex = ALL_STATUSES.findIndex(s => s.key === currentStatus)
-  const isTerminal = currentStatus === 'delivered' || currentStatus === 'cancelled'
+  const currentIndex = ALL_STATUSES.findIndex(s => s.key === status)
+  const isTerminal = status === 'delivered' || status === 'cancelled'
 
-  const handleUpdate = async (status: string) => {
+  const handleUpdate = async (newStatus: string) => {
     setLoading(true)
     try {
       const res = await fetch(`${PAYLOAD_URL}/api/orders/${orderId}`, {
@@ -47,14 +46,15 @@ export default function OrderStatusUpdater({ orderId, currentStatus, token }: Pr
           'Content-Type': 'application/json',
           'Authorization': `JWT ${token}`,
         },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status: newStatus }),
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
         throw new Error(err.errors?.[0]?.message || `Failed to update (${res.status})`)
       }
-      toast.success(`Order status updated to ${ORDER_STATUS_LABELS[status] || status}`)
-      router.refresh()
+      // Update status locally - no need for router.refresh()
+      setStatus(newStatus)
+      toast.success(`Order status updated to ${ORDER_STATUS_LABELS[newStatus] || newStatus}`)
     } catch (err: any) {
       toast.error(err.message || 'Failed to update status')
     } finally {
@@ -65,7 +65,7 @@ export default function OrderStatusUpdater({ orderId, currentStatus, token }: Pr
   if (isTerminal) {
     return (
       <div className="text-sm text-gray-500">
-        This order is <strong>{ORDER_STATUS_LABELS[currentStatus]}</strong>. No further status updates.
+        This order is <strong>{ORDER_STATUS_LABELS[status] || status}</strong>. No further status updates.
       </div>
     )
   }
@@ -79,21 +79,21 @@ export default function OrderStatusUpdater({ orderId, currentStatus, token }: Pr
     <div className="space-y-6">
       {/* Status Progress Bar */}
       <div className="flex items-center gap-1 overflow-x-auto pb-2">
-        {ALL_STATUSES.map((status, i) => {
+        {ALL_STATUSES.map((s, i) => {
           const isCompleted = i < currentIndex
           const isCurrent = i === currentIndex
 
           return (
-            <div key={status.key} className="flex items-center">
+            <div key={s.key} className="flex items-center">
               <div className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap ${
                 isCurrent
-                  ? ORDER_STATUS_COLORS[status.key] || 'bg-blue-100 text-blue-800'
+                  ? ORDER_STATUS_COLORS[s.key] || 'bg-blue-100 text-blue-800'
                   : isCompleted
                   ? 'bg-green-50 text-green-600'
                   : 'bg-gray-50 text-gray-400'
               }`}>
-                <span>{status.icon}</span>
-                <span>{status.label}</span>
+                <span>{s.icon}</span>
+                <span>{s.label}</span>
               </div>
               {i < ALL_STATUSES.length - 1 && (
                 <ArrowRight className={`w-3 h-3 mx-1 flex-shrink-0 ${isCompleted ? 'text-green-400' : 'text-gray-300'}`} />
@@ -123,7 +123,7 @@ export default function OrderStatusUpdater({ orderId, currentStatus, token }: Pr
         </button>
       </div>
 
-      {currentIndex >= VENDOR_STATUS_FLOW.length - 1 && currentStatus === 'ready_for_delivery' && (
+      {status === 'ready_for_delivery' && (
         <p className="text-xs text-gray-500 italic">
           💡 Once the delivery driver picks up the order, they will update the status to "Out for Delivery" and "Delivered" from the Driver App.
           For now, you can also advance the status manually.

@@ -139,7 +139,7 @@ export default function TeamClient({ token, vendorId, myRole, storeName, initial
 
     try {
       setAdding(true)
-      const res = await fetch(`${process.env.NEXT_PUBLIC_PAYLOAD_URL}/api/vendor-staff/add`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_PAYLOAD_URL}/api/team/add-member`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `JWT ${token}` },
         body: JSON.stringify({

@@ -10,8 +10,34 @@ import { createProduct, getMyVendorProfile } from '@/lib/api'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
-const CATEGORIES = ['Groceries', 'Produce', 'Beverages', 'Bakery', 'Dairy', 'Meat & Seafood', 'Household', 'Personal Care', 'Electronics', 'Clothing', 'Other']
-const UNITS = ['each', 'kg', 'g', 'L', 'mL', 'pack', 'dozen', 'box', 'bag']
+const CATEGORIES = [
+  { label: 'Groceries', value: 'groceries' },
+  { label: 'Fresh Produce', value: 'produce' },
+  { label: 'Bakery', value: 'bakery' },
+  { label: 'Beverages', value: 'beverages' },
+  { label: 'Dairy & Eggs', value: 'dairy' },
+  { label: 'Meat & Seafood', value: 'meat' },
+  { label: 'Frozen Foods', value: 'frozen' },
+  { label: 'Snacks & Confectionery', value: 'snacks' },
+  { label: 'Household & Cleaning', value: 'household' },
+  { label: 'Personal Care', value: 'personal_care' },
+  { label: 'Baby & Kids', value: 'baby' },
+  { label: 'Electronics', value: 'electronics' },
+  { label: 'Clothing', value: 'clothing' },
+  { label: 'Hardware', value: 'hardware' },
+  { label: 'Other', value: 'other' },
+]
+
+const UNITS = [
+  { label: 'Item', value: 'item' },
+  { label: 'Kilogram (kg)', value: 'kg' },
+  { label: 'Gram (g)', value: 'g' },
+  { label: 'Litre (L)', value: 'L' },
+  { label: 'Millilitre (ml)', value: 'ml' },
+  { label: 'Pack', value: 'pack' },
+  { label: 'Bundle', value: 'bundle' },
+  { label: 'Dozen', value: 'dozen' },
+]
 
 const schema = z.object({
   name: z.string().min(2),
@@ -32,7 +58,7 @@ export default function NewProductClient({ token }: { token: string }) {
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { active: true, unit: 'each', stock: 0 },
+    defaultValues: { active: true, unit: 'item', stock: 0 },
   })
 
   const onSubmit = async (data: FormData) => {
@@ -81,7 +107,7 @@ export default function NewProductClient({ token }: { token: string }) {
               <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
               <select {...register('category')} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white">
                 <option value="">Select category</option>
-                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
               {errors.category && <p className="mt-1 text-sm text-red-600">{errors.category.message}</p>}
             </div>
@@ -94,7 +120,7 @@ export default function NewProductClient({ token }: { token: string }) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
               <select {...register('unit')} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white">
-                {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                {UNITS.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
               </select>
             </div>
           </div>

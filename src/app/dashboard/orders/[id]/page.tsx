@@ -18,11 +18,11 @@ async function getOrder(id: string, token: string) {
   return res.json()
 }
 
-export default async function OrderDetailPage({ params }: { params: { id: string } }) {
+export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const cookieStore = await cookies()
   const token = cookieStore.get('payload-token')?.value!
-  const order = await getOrder(params.id, token)
-  if (!order) notFound()
+  const order = await getOrder(id, token)
 
   return (
     <div className="p-8 max-w-3xl">

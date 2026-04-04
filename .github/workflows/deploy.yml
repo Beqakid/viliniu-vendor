@@ -22,7 +22,7 @@ jobs:
         env:
           NEXT_PUBLIC_PAYLOAD_URL: https://multistore.jjioji.workers.dev
 
-           - name: Deploy to Cloudflare Pages
+      - name: Deploy to Cloudflare Pages
         run: npx wrangler pages deploy .vercel/output/static --project-name=viliniu-vendor
         env:
           CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_GLOBAL_API_KEY }}

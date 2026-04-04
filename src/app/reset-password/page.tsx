@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 const PAYLOAD_URL = process.env.NEXT_PUBLIC_PAYLOAD_URL || 'https://multistore.jjioji.workers.dev'
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const searchParams = useSearchParams()
   const [token, setToken] = useState(searchParams.get('token') || '')
   const [password, setPassword] = useState('')
@@ -136,5 +136,13 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center"><p className="text-gray-500">Loading...</p></div>}>
+      <ResetPasswordContent />
+    </Suspense>
   )
 }

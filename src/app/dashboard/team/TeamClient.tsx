@@ -139,7 +139,7 @@ export default function TeamClient({ token, vendorId, myRole, storeName, initial
 
     try {
       setAdding(true)
-      const res = await fetch(`${process.env.NEXT_PUBLIC_PAYLOAD_URL}/api/vendor-staff/add-member`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_PAYLOAD_URL}/api/vendor-staff/add`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `JWT ${token}` },
         body: JSON.stringify({
@@ -300,7 +300,7 @@ export default function TeamClient({ token, vendorId, myRole, storeName, initial
                 disabled={inviting}
                 className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700 disabled:opacity-50"
               >
-                {inviting ? 'Inviting…' : 'Send Invite'}
+                {inviting ? 'Inviting\u2026' : 'Send Invite'}
               </button>
               <button
                 type="button"
@@ -392,7 +392,7 @@ export default function TeamClient({ token, vendorId, myRole, storeName, initial
                 disabled={adding}
                 className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
               >
-                {adding ? 'Adding…' : 'Add Member'}
+                {adding ? 'Adding\u2026' : 'Add Member'}
               </button>
               <button
                 type="button"
@@ -419,7 +419,7 @@ export default function TeamClient({ token, vendorId, myRole, storeName, initial
         </div>
 
         {loading && staff.length === 0 ? (
-          <div className="px-6 py-12 text-center text-sm text-gray-500">Loading team…</div>
+          <div className="px-6 py-12 text-center text-sm text-gray-500">Loading team\u2026</div>
         ) : staff.length === 0 ? (
           <div className="px-6 py-12 text-center">
             <Users className="mx-auto h-10 w-10 text-gray-300" />

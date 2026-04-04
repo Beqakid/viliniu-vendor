@@ -29,20 +29,19 @@ export default function NotificationBell({ token }: { token: string }) {
     Authorization: `JWT ${token}`,
   }
 
-  // Fetch unread count
   const fetchUnreadCount = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/notifications/unread-count`, { headers })
+      const res = await fetch(
+        `${API_URL}/api/notifications?where[read][equals]=false&limit=0`,
+        { headers }
+      )
       if (res.ok) {
         const data = await res.json()
-        setUnreadCount(data.count || 0)
+        setUnreadCount(data.totalDocs || 0)
       }
-    } catch (e) {
-      // silent fail
-    }
+    } catch (e) {}
   }
 
-  // Fetch notifications
   const fetchNotifications = async () => {
     setLoading(true)
     try {
@@ -54,35 +53,41 @@ export default function NotificationBell({ token }: { token: string }) {
         const data = await res.json()
         setNotifications(data.docs || [])
       }
-    } catch (e) {
-      // silent fail
-    }
+    } catch (e) {}
     setLoading(false)
   }
 
-  // Mark one as read
   const markAsRead = async (id: string) => {
     try {
-      await fetch(`${API_URL}/api/notifications/${id}/read`, {
-        method: 'POST',
+      await fetch(`${API_URL}/api/notifications/${id}`, {
+        method: 'PATCH',
         headers,
+        body: JSON.stringify({ read: true }),
       })
     } catch (e) {}
   }
 
-  // Mark all as read
   const markAllRead = async () => {
     try {
-      await fetch(`${API_URL}/api/notifications/mark-all-read`, {
-        method: 'POST',
-        headers,
-      })
+      const res = await fetch(
+        `${API_URL}/api/notifications?where[read][equals]=false&limit=50`,
+        { headers }
+      )
+      if (res.ok) {
+        const data = await res.json()
+        for (const notif of data.docs || []) {
+          await fetch(`${API_URL}/api/notifications/${notif.id}`, {
+            method: 'PATCH',
+            headers,
+            body: JSON.stringify({ read: true }),
+          })
+        }
+      }
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
       setUnreadCount(0)
     } catch (e) {}
   }
 
-  // Handle notification click
   const handleClick = async (notif: Notification) => {
     if (!notif.read) {
       await markAsRead(notif.id)
@@ -97,19 +102,16 @@ export default function NotificationBell({ token }: { token: string }) {
     }
   }
 
-  // Poll unread count
   useEffect(() => {
     fetchUnreadCount()
     const interval = setInterval(fetchUnreadCount, 30000)
     return () => clearInterval(interval)
   }, [])
 
-  // Fetch when dropdown opens
   useEffect(() => {
     if (open) fetchNotifications()
   }, [open])
 
-  // Close on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -127,8 +129,7 @@ export default function NotificationBell({ token }: { token: string }) {
     if (mins < 60) return `${mins}m ago`
     const hrs = Math.floor(mins / 60)
     if (hrs < 24) return `${hrs}h ago`
-    const days = Math.floor(hrs / 24)
-    return `${days}d ago`
+    return `${Math.floor(hrs / 24)}d ago`
   }
 
   const typeIcon = (type: string) => {

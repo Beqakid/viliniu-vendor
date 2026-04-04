@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Camera } from 'lucide-react'
 import { formatCurrency, formatDate, ORDER_STATUS_COLORS, ORDER_STATUS_LABELS, CITY_LABELS } from '@/lib/utils'
 import OrderStatusUpdater from './OrderStatusUpdater'
 
@@ -34,6 +34,15 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     )
   }
 
+  // Resolve delivery photo URL
+  const deliveryPhotoUrl = order.deliveryPhoto
+    ? typeof order.deliveryPhoto === 'object'
+      ? order.deliveryPhoto.url?.startsWith('http')
+        ? order.deliveryPhoto.url
+        : `${PAYLOAD_URL}${order.deliveryPhoto.url}`
+      : null
+    : null
+
   return (
     <div className="p-8 max-w-3xl">
       <div className="mb-8">
@@ -62,6 +71,31 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           <h3 className="font-semibold text-gray-900 mb-4">Update Order Status</h3>
           <OrderStatusUpdater orderId={order.id} currentStatus={order.status} token={token} />
         </div>
+
+        {/* Delivery Proof Photo */}
+        {order.status === 'delivered' && (
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Camera className="w-5 h-5 text-green-600" />
+              <h3 className="font-semibold text-gray-900">Proof of Delivery</h3>
+            </div>
+            {deliveryPhotoUrl ? (
+              <div className="space-y-3">
+                <div className="rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                  <img
+                    src={deliveryPhotoUrl}
+                    alt="Delivery proof photo"
+                    className="w-full max-w-md mx-auto object-contain"
+                    style={{ maxHeight: '400px' }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500">📸 Photo taken by delivery driver upon delivery</p>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">No delivery photo was uploaded for this order.</p>
+            )}
+          </div>
+        )}
 
         {/* Customer & Delivery Info */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">

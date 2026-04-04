@@ -5,7 +5,8 @@ import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/utils'
 import { ArrowRight, XCircle } from 'lucide-react'
-import { updateOrderStatusAction } from './actions'
+
+const PAYLOAD_URL = process.env.NEXT_PUBLIC_PAYLOAD_URL || ''
 
 // Vendor can progress through these statuses
 const VENDOR_STATUS_FLOW = [
@@ -27,9 +28,10 @@ const ALL_STATUSES = [...VENDOR_STATUS_FLOW, ...DRIVER_STATUSES]
 interface Props {
   orderId: string
   currentStatus: string
+  token: string
 }
 
-export default function OrderStatusUpdater({ orderId, currentStatus }: Props) {
+export default function OrderStatusUpdater({ orderId, currentStatus, token }: Props) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
@@ -39,9 +41,17 @@ export default function OrderStatusUpdater({ orderId, currentStatus }: Props) {
   const handleUpdate = async (status: string) => {
     setLoading(true)
     try {
-      const result = await updateOrderStatusAction(String(orderId), status)
-      if (!result.success) {
-        throw new Error(result.error)
+      const res = await fetch(`${PAYLOAD_URL}/api/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `JWT ${token}`,
+        },
+        body: JSON.stringify({ status }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.errors?.[0]?.message || `Failed to update (${res.status})`)
       }
       toast.success(`Order status updated to ${ORDER_STATUS_LABELS[status] || status}`)
       router.refresh()

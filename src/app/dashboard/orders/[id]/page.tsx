@@ -60,7 +60,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         {/* Status Progression */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h3 className="font-semibold text-gray-900 mb-4">Update Order Status</h3>
-          <OrderStatusUpdater orderId={order.id} currentStatus={order.status} />
+          <OrderStatusUpdater orderId={order.id} currentStatus={order.status} token={token} />
         </div>
 
         {/* Customer & Delivery Info */}

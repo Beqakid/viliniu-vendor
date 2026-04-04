@@ -51,8 +51,13 @@ export async function getMe(token: string) {
 }
 
 export async function getMyVendorProfile(token: string) {
+  // First get the current user ID, then query vendors by that ID
+  const me = await getMe(token)
+  if (!me?.user?.id) {
+    return { docs: [], totalDocs: 0 }
+  }
   return fetchAPI<{ docs: any[]; totalDocs: number }>(
-    '/vendors?where[user][equals]=me&limit=1',
+    `/vendors?where[user][equals]=${me.user.id}&limit=1`,
     {},
     token,
   )

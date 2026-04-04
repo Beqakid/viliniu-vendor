@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingBag, Store, Users, LogOut } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingBag, Store, Users, LogOut, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { logoutAction } from '@/lib/auth-actions'
 import { useRouter } from 'next/navigation'
@@ -15,7 +15,13 @@ const nav = [
   { href: '/dashboard/store', label: 'Store Settings', icon: Store },
 ]
 
-export default function Sidebar() {
+interface SidebarProps {
+  userName: string
+  storeName: string
+  userRole: string
+}
+
+export default function Sidebar({ userName, storeName, userRole }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -25,12 +31,27 @@ export default function Sidebar() {
     router.refresh()
   }
 
+  const roleLabel = userRole === 'admin' ? 'Admin' : 'Vendor'
+
   return (
     <aside className="w-64 bg-white border-r border-gray-200 flex flex-col min-h-screen">
       <div className="p-6 border-b border-gray-200">
         <h1 className="text-xl font-bold text-gray-900">
           <span className="text-brand-600">Viliniu</span> Vendor
         </h1>
+      </div>
+
+      {/* Logged-in user info */}
+      <div className="px-4 py-3 border-b border-gray-100">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
+            <User className="w-4 h-4 text-brand-700" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">{userName}</p>
+            <p className="text-xs text-gray-500">{roleLabel}</p>
+          </div>
+        </div>
       </div>
 
       <nav className="flex-1 p-4 space-y-1">

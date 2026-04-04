@@ -7,11 +7,26 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 import { getMyVendorProfile, createVendorProfile, updateVendorProfile, getMe } from '@/lib/api'
 
-const FIJI_CITIES = ['Suva', 'Lautoka', 'Nadi', 'Labasa', 'Ba', 'Levuka', 'Sigatoka', 'Tavua', 'Rakiraki', 'Savusavu']
+const FIJI_CITIES = [
+  { label: 'Suva', value: 'suva' },
+  { label: 'Nadi', value: 'nadi' },
+  { label: 'Lautoka', value: 'lautoka' },
+  { label: 'Labasa', value: 'labasa' },
+  { label: 'Savusavu', value: 'savusavu' },
+  { label: 'Sigatoka', value: 'sigatoka' },
+  { label: 'Ba', value: 'ba' },
+  { label: 'Tavua', value: 'tavua' },
+  { label: 'Rakiraki', value: 'rakiraki' },
+  { label: 'Korovou', value: 'korovou' },
+  { label: 'Navua', value: 'navua' },
+  { label: 'Levuka', value: 'levuka' },
+]
 
 const schema = z.object({
   storeName: z.string().min(2, 'Store name must be at least 2 characters'),
   location: z.string().min(1, 'Please select a location'),
+  address: z.string().min(1, 'Please enter your store address'),
+  phone: z.string().optional(),
   deliveryType: z.enum(['own_delivery', 'platform_delivery']),
   payoutDetails: z.string().optional(),
 })
@@ -34,12 +49,15 @@ export default function StoreClient({ token }: { token: string }) {
       try {
         const data = await getMyVendorProfile(token)
         if (data?.docs?.[0]) {
-          setVendor(data.docs[0])
+          const v = data.docs[0]
+          setVendor(v)
           reset({
-            storeName: data.docs[0].storeName,
-            location: data.docs[0].location,
-            deliveryType: data.docs[0].deliveryType,
-            payoutDetails: data.docs[0].payoutDetails ?? '',
+            storeName: v.storeName,
+            location: v.location,
+            address: v.address ?? '',
+            phone: v.phone ?? '',
+            deliveryType: v.deliveryType,
+            payoutDetails: v.payoutDetails ?? '',
           })
         }
       } catch {}
@@ -94,14 +112,29 @@ export default function StoreClient({ token }: { token: string }) {
             <input {...register('storeName')} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="e.g. Fresh Fiji Groceries" />
             {errors.storeName && <p className="mt-1 text-sm text-red-600">{errors.storeName.message}</p>}
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Location *</label>
             <select {...register('location')} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white">
               <option value="">Select your city in Fiji</option>
-              {FIJI_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+              {FIJI_CITIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
             {errors.location && <p className="mt-1 text-sm text-red-600">{errors.location.message}</p>}
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Store Address *</label>
+            <input {...register('address')} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="e.g. 123 Victoria Parade, Suva" />
+            <p className="mt-1 text-xs text-gray-400">Delivery drivers use this for order pickup</p>
+            {errors.address && <p className="mt-1 text-sm text-red-600">{errors.address.message}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Store Phone</label>
+            <input {...register('phone')} type="tel" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="e.g. +679 330 1234" />
+            <p className="mt-1 text-xs text-gray-400">Drivers can call if they need pickup directions</p>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Type *</label>
             <div className="space-y-2">
@@ -121,10 +154,12 @@ export default function StoreClient({ token }: { token: string }) {
               </label>
             </div>
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Payout Details</label>
             <textarea {...register('payoutDetails')} rows={3} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none" placeholder="Bank account details or mobile money for payouts..." />
           </div>
+
           <button type="submit" disabled={loading} className="w-full bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors">
             {loading ? 'Saving...' : vendor ? 'Update Store' : 'Create Store'}
           </button>

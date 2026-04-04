@@ -73,6 +73,12 @@ export default function LoginPage() {
               {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>}
             </div>
 
+            <div className="text-right">
+              <a href="/forgot-password" className="text-sm text-brand-600 hover:text-brand-700">
+                Forgot password?
+              </a>
+            </div>
+
             <button
               type="submit"
               disabled={loading}

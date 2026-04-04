@@ -59,10 +59,16 @@ export default function TeamClient({ token, vendorId, myRole, storeName, initial
   const [staff, setStaff] = useState<StaffMember[]>(initialStaff)
   const [loading, setLoading] = useState(false)
   const [showInviteForm, setShowInviteForm] = useState(false)
+  const [showAddForm, setShowAddForm] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteName, setInviteName] = useState('')
   const [inviteRole, setInviteRole] = useState('store_staff')
   const [inviting, setInviting] = useState(false)
+  const [addEmail, setAddEmail] = useState('')
+  const [addName, setAddName] = useState('')
+  const [addPassword, setAddPassword] = useState('')
+  const [addRole, setAddRole] = useState('store_staff')
+  const [adding, setAdding] = useState(false)
   const [removingId, setRemovingId] = useState<number | string | null>(null)
 
   const canManageTeam = myRole === 'store_owner' || myRole === 'store_manager'
@@ -118,6 +124,53 @@ export default function TeamClient({ token, vendorId, myRole, storeName, initial
     }
   }
 
+  async function handleAddMember(e: React.FormEvent) {
+    e.preventDefault()
+
+    if (!addEmail.trim() || !addName.trim() || !addPassword.trim()) {
+      toast.error('Please fill in all fields')
+      return
+    }
+
+    if (addPassword.length < 6) {
+      toast.error('Password must be at least 6 characters')
+      return
+    }
+
+    try {
+      setAdding(true)
+      const res = await fetch(`${process.env.NEXT_PUBLIC_PAYLOAD_URL}/api/vendor-staff/add-member`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `JWT ${token}` },
+        body: JSON.stringify({
+          email: addEmail.trim(),
+          name: addName.trim(),
+          password: addPassword,
+          role: addRole,
+          vendorId,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to add member')
+      }
+
+      toast.success(data.message || 'Member added successfully')
+      setAddEmail('')
+      setAddName('')
+      setAddPassword('')
+      setAddRole('store_staff')
+      setShowAddForm(false)
+      await refreshStaff()
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to add member')
+    } finally {
+      setAdding(false)
+    }
+  }
+
   async function handleRemove(member: StaffMember) {
     if (member.isOwner || member.role === 'store_owner') return
 
@@ -141,6 +194,16 @@ export default function TeamClient({ token, vendorId, myRole, storeName, initial
     }
   }
 
+  function openInviteForm() {
+    setShowAddForm(false)
+    setShowInviteForm(true)
+  }
+
+  function openAddForm() {
+    setShowInviteForm(false)
+    setShowAddForm(true)
+  }
+
   return (
     <div className="space-y-6 p-4 md:p-8">
       {/* Header */}
@@ -150,13 +213,32 @@ export default function TeamClient({ token, vendorId, myRole, storeName, initial
           {storeName && <p className="mt-1 text-sm text-gray-500">{storeName}</p>}
         </div>
         {canManageTeam && (
-          <button
-            onClick={() => setShowInviteForm(!showInviteForm)}
-            className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700"
-          >
-            <UserPlus className="h-4 w-4" />
-            Invite Member
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={openInviteForm}
+              className={cn(
+                'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors',
+                showInviteForm
+                  ? 'bg-brand-700 ring-2 ring-brand-300'
+                  : 'bg-brand-600 hover:bg-brand-700'
+              )}
+            >
+              <UserPlus className="h-4 w-4" />
+              Invite Member
+            </button>
+            <button
+              onClick={openAddForm}
+              className={cn(
+                'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors',
+                showAddForm
+                  ? 'bg-green-700 ring-2 ring-green-300'
+                  : 'bg-green-600 hover:bg-green-700'
+              )}
+            >
+              <UserPlus className="h-4 w-4" />
+              Add Member
+            </button>
+          </div>
         )}
       </div>
 
@@ -223,6 +305,98 @@ export default function TeamClient({ token, vendorId, myRole, storeName, initial
               <button
                 type="button"
                 onClick={() => setShowInviteForm(false)}
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Add Member Form */}
+      {showAddForm && canManageTeam && (
+        <div className="rounded-lg border border-green-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-1 text-lg font-semibold text-gray-900">Add Team Member</h2>
+          <p className="mb-4 text-sm text-gray-500">
+            Create a team member account directly. Share the login credentials with them.
+          </p>
+          <form onSubmit={handleAddMember} className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="add-name" className="mb-1 block text-sm font-medium text-gray-700">
+                  Name
+                </label>
+                <input
+                  id="add-name"
+                  type="text"
+                  value={addName}
+                  onChange={(e) => setAddName(e.target.value)}
+                  placeholder="Full name"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="add-email" className="mb-1 block text-sm font-medium text-gray-700">
+                  Email
+                </label>
+                <input
+                  id="add-email"
+                  type="email"
+                  value={addEmail}
+                  onChange={(e) => setAddEmail(e.target.value)}
+                  placeholder="email@example.com"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="add-password" className="mb-1 block text-sm font-medium text-gray-700">
+                  Password
+                </label>
+                <input
+                  id="add-password"
+                  type="password"
+                  value={addPassword}
+                  onChange={(e) => setAddPassword(e.target.value)}
+                  placeholder="Min 6 characters"
+                  minLength={6}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="add-role" className="mb-1 block text-sm font-medium text-gray-700">
+                  Role
+                </label>
+                <select
+                  id="add-role"
+                  value={addRole}
+                  onChange={(e) => setAddRole(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
+                >
+                  {availableRoles.map((r) => (
+                    <option key={r.value} value={r.value}>
+                      {r.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                disabled={adding}
+                className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
+              >
+                {adding ? 'Adding…' : 'Add Member'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAddForm(false)}
                 className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
               >
                 Cancel
